@@ -1,0 +1,10 @@
+Oct 19 10:12:33 server1 ERROR Disk failure detected
+Oct 19 10:12:34 server1 WARNING High memory usage
+Oct 19 10:12:35 server1 CRITICAL Kernel panic
+Oct 19 10:12:36 server1 sshd[1023]: authentication failure for user root from 192.168.1.50
+Oct 19 10:12:37 server1 INFO Backup completed
+Oct 19 10:12:36 server1 sshd[1023]: authentication failure for user root from 192.168.1.50
+Oct 19 10:12:37 server1 sshd[1023]: authentication failure for user root from 192.168.1.50
+Oct 19 10:12:38 server1 sshd[1023]: authentication failure for user root from 192.168.1.50
+Oct 19 10:12:39 server1 sshd[1023]: authentication failure for user root from 192.168.1.50
+Oct 19 10:12:40 server1 sshd[1023]: authentication failure for user root from 192.168.1.50
