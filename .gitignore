@@ -218,3 +218,12 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Generated output files
+report.json
+incidents.csv
+security_report.html
+
+# IDE files
+.idea/
+.vscode/
