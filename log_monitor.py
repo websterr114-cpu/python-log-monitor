@@ -61,6 +61,22 @@ def generate_html_report(report, output_file):
                 background-color: #333;
                 color: white;
             }}
+            
+            .medium {{
+                color: orange;
+                font-weight: bold;
+            }}
+            
+            .high {{
+                color: red;
+                font-weight: bold;
+            }}
+            
+            .critical {{
+                color: darkred;
+                font-weight: bold;
+            }}
+            
         </style>
     </head>
 
@@ -94,6 +110,46 @@ def generate_html_report(report, output_file):
                     {report["risk_assessment"]["risk_level"]}
                 </p>
             </div>
+            
+               <div class="card">
+                <h2>Attack Analysis</h2>
+                
+                <table>
+                    <tr>
+                        <th>Source IP</th>
+                        <th>Classification</th>
+                        <th>Threat</th>
+                        <th>Attempts</th>
+                    </tr>
+                    
+                { ''.join(
+                    f'''
+                    <tr>
+                        <td>{attack["source_ip"]}</td>
+                        <td>{attack["classification"]}</td>
+                        <td class="{attack["threat"].lower()}">
+                            {attack["threat"]}
+                        </td>
+                        <td>{attack["failed_attempts"]}</td>
+                    </tr>
+                    '''
+                    for attack in report["attack_analysis"]
+                    )}
+                </table>
+            </div>
+            
+            <div class="card">
+                <h2>Recommended Actions</h2>
+    
+
+                <ul>
+                    {''.join(
+        f'<li>{item}</li>'
+        for item in report["recommendations"]
+    )}
+                </ul>
+                
+            </div>
 
             <div class="card">
                 <h2>Top IP Addresses:</h2>
@@ -112,16 +168,7 @@ def generate_html_report(report, output_file):
             </div>
             
 
-            <div class="card">
-                <h2>Recommended Actions</h2>
-
-                <ul>
-                    {''.join(
-        f'<li>{item}</li>'
-        for item in report["recommendations"]
-    )}
-                </ul>
-            </div>
+         
 
     </div>
     
@@ -202,6 +249,7 @@ def main():
         "errors": [],
         "warnings": [],
         "criticals": [],
+        "attack_analysis": [],
         "ip_addresses": [],
         "auth_failures": [],
         "ip_frequency": {},
@@ -210,6 +258,7 @@ def main():
         "top_ips": [],
         "risk_assessment": {},
         "recommendations": []
+
     }
     incidents = []
 
