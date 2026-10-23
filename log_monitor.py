@@ -3,6 +3,7 @@ import json
 import re
 import csv
 import requests
+import webbrowser
 from pathlib import Path
 from datetime import datetime
 
@@ -118,6 +119,9 @@ def generate_html_report(report, output_file):
                 <table>
                     <tr>
                         <th>Source IP</th>
+                        <th>Country</th>
+                        <th>City</th>
+                        <th>ISP</th>
                         <th>Classification</th>
                         <th>Threat</th>
                         <th>Attempts</th>
@@ -127,6 +131,9 @@ def generate_html_report(report, output_file):
                     f'''
                     <tr>
                         <td>{attack["source_ip"]}</td>
+                        <td>{attack["country"]}</td>
+                        <td>{attack["city"]}</td>
+                        <td>{attack["isp"]}</td>
                         <td>{attack["classification"]}</td>
                         <td class="{attack["threat"].lower()}">
                             {attack["threat"]}
@@ -182,6 +189,10 @@ def generate_html_report(report, output_file):
 
     print(f"HTML report saved to {output_file}")
 
+    webbrowser.open(
+        Path(output_file).resolve().as_uri()
+    )
+
 def classify_ip(ip):
 
     if ip.startswith("192.168."):
@@ -206,11 +217,6 @@ def get_ip_geolocation(ip):
 
         data = response.json()
 
-        print("\n=== GEOLOCATION DEBUG ===")
-        print(f"IP: {ip}")
-        print(data)
-        print("===========================\n")
-
         if data["status"] == "success":
 
             return {
@@ -219,8 +225,8 @@ def get_ip_geolocation(ip):
                 "isp": data.get("isp", "Unknown"),
             }
 
-    except Exception:
-        pass
+    except requests.RequestException as e:
+        print(f"\n=== GEOLOCATION ERROR: {e} ===")
 
     return {
         "country": "Unknown",
@@ -550,6 +556,7 @@ def main():
             print(
                 f"- {attack['source_ip']} | "
                 f"{attack['country']} | "
+                f"{attack['isp']} | "
                 f"{attack['threat']} | "
                 f"{attack['failed_attempts']} attempts"
             )
