@@ -8,3 +8,10 @@ Oct 19 10:12:37 server1 sshd[1023]: authentication failure for user root from 19
 Oct 19 10:12:38 server1 sshd[1023]: authentication failure for user root from 192.168.1.50
 Oct 19 10:12:39 server1 sshd[1023]: authentication failure for user root from 192.168.1.50
 Oct 19 10:12:40 server1 sshd[1023]: authentication failure for user root from 192.168.1.50
+Oct 23 12:30:01 server failed password from 8.8.8.8
+Oct 23 12:30:01 server failed password from 8.8.8.8
+Oct 23 12:30:10 server failed password from 8.8.8.8
+Oct 23 12:30:20 server failed password from 8.8.8.8
+Oct 23 12:30:30 server failed password from 8.8.8.8
+Oct 23 12:30:40 server failed password from 8.8.8.8
+Oct 23 12:30:50 server failed password from 8.8.8.8

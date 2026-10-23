@@ -2,6 +2,7 @@ import argparse
 import json
 import re
 import csv
+import requests
 from pathlib import Path
 from datetime import datetime
 
@@ -182,6 +183,7 @@ def generate_html_report(report, output_file):
     print(f"HTML report saved to {output_file}")
 
 def classify_ip(ip):
+
     if ip.startswith("192.168."):
         return "Internal Network"
 
@@ -193,6 +195,38 @@ def classify_ip(ip):
 
     else:
         return "External Source"
+
+def get_ip_geolocation(ip):
+
+    try:
+        response = requests.get(
+            f"http://ip-api.com/json/{ip}",
+            timeout=5
+        )
+
+        data = response.json()
+
+        print("\n=== GEOLOCATION DEBUG ===")
+        print(f"IP: {ip}")
+        print(data)
+        print("===========================\n")
+
+        if data["status"] == "success":
+
+            return {
+                "country": data.get("country", "Unknown"),
+                "city": data.get("city", "Unknown"),
+                "isp": data.get("isp", "Unknown"),
+            }
+
+    except Exception:
+        pass
+
+    return {
+        "country": "Unknown",
+        "city": "Unknown",
+        "isp": "Unknown",
+    }
 
 def main():
     parser = argparse.ArgumentParser(description='Log monitor tool')
@@ -377,12 +411,28 @@ def main():
         else:
             threat = "LOW"
 
+
+        classification = classify_ip(alert["ip"])
+
+        if classification == "External Source":
+            geo = get_ip_geolocation(alert["ip"])
+        else:
+            geo = {
+                "country": "Internal Network",
+                "city": "Internal",
+                "isp": "Internal"
+            }
+
         report["attack_analysis"].append({
             "source_ip": alert["ip"],
             "failed_attempts": failures,
-            "classification": classify_ip(alert["ip"]),
+            "classification": classification,
             "threat": threat,
+            "country": geo["country"],
+            "city": geo["city"],
+            "isp": geo["isp"]
         })
+
 
     error_count = len(report["errors"])
     warning_count = len(report["warnings"])
@@ -499,7 +549,7 @@ def main():
 
             print(
                 f"- {attack['source_ip']} | "
-                f"{attack['classification']} | "
+                f"{attack['country']} | "
                 f"{attack['threat']} | "
                 f"{attack['failed_attempts']} attempts"
             )
