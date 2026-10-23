@@ -12,17 +12,150 @@ BLUE = "\033[94m"
 RESET = "\033[0m"
 BOLD = "\033[1m"
 
+
 def parse_timestamp(ts):
     return datetime.strptime(ts, "%b %d %H:%M:%S")
+
+
+def generate_html_report(report, output_file):
+
+    error_total = len(report['errors'])
+    warning_total = len(report['warnings'])
+    critical_total = len(report['criticals'])
+    auth_total = len(report['auth_failures'])
+
+    html = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Python Log Monitor</title>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+        <style>
+            body {{
+                font-family: sans-serif;
+                background-color: #f4f4f4;
+                margin: 20px;
+            }}
+
+            .container {{
+                max-width: 1000px;
+                margin: auto;
+            }}
+
+            .card {{
+                background-color: white;
+                padding: 20px;
+                margin-bottom: 20px;
+                border-radius: 10px;
+                box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
+            }}
+
+            table {{
+                width: 100%;
+                border-collapse: collapse;
+            }}
+
+            th, td {{
+                border: 1px solid #ddd;
+                padding: 10px;
+                text-align: left;
+            }}
+
+            th {{
+                background-color: #333;
+                color: white;
+            }}
+        </style>
+    </head>
+
+    <body>
+    <div class="container">
+
+        <div class="card">
+            <h1>Python Log Monitor</h1>
+
+            <p><strong>Total Lines:</strong> {report['total_lines']}</p>
+            <p><strong>Errors:</strong> {len(report['errors'])}</p>
+            <p><strong>Warnings:</strong> {len(report['warnings'])}</p>
+            <p><strong>Critical Events:</strong> {len(report['criticals'])}</p>
+            <p><strong>Bruteforce Alerts:</strong> {len(report['bruteforce_alerts'])}</p></div>
+
+            <div class="card">
+                <h2>Security Assessment</h2>
+
+                <p>
+                    <strong>Health Score:</strong>
+                    {report["statistics"]["health_score"]}/100
+                </p>
+
+                <p>
+                    <strong>Threat Score:</strong>
+                    {report["risk_assessment"]["risk_score"]}
+                </p>
+
+                <p>
+                    <strong>Threat Level:</strong>
+                    {report["risk_assessment"]["risk_level"]}
+                </p>
+            </div>
+
+            <div class="card">
+                <h2>Top IP Addresses:</h2>
+
+                <table>
+                    <tr>
+                        <th>IP Address</th>
+                        <th>Events</th>
+                    </tr>
+
+                    {''.join(
+        f'<tr><td>{ip["ip"]}</td><td>{ip["count"]}</td></tr>'
+        for ip in report["top_ips"]
+    )}
+                </table>
+            </div>
+            
+
+            <div class="card">
+                <h2>Recommended Actions</h2>
+
+                <ul>
+                    {''.join(
+        f'<li>{item}</li>'
+        for item in report["recommendations"]
+    )}
+                </ul>
+            </div>
+
+    </div>
+    
+    </body>
+    </html>
+    """
+
+    with open(output_file, "w") as f:
+        f.write(html)
+
+    print(f"HTML report saved to {output_file}")
+
 
 def main():
     parser = argparse.ArgumentParser(description='Log monitor tool')
 
-    parser.add_argument("--file", required =True, help="Path to log file")
+    parser.add_argument("--file", required=True, help="Path to log file")
     parser.add_argument("--output", required=True, help="Path to JSON report")
     parser.add_argument("--limit", type=int, default=None, help="Only scan last N lines")
     parser.add_argument("--verbose", action="store_true", help="Print matches as found")
-    parser.add_argument("--csv", help= "Optional CSV incident report output",)
+    parser.add_argument(
+        "--csv",
+        help="Optional CSV incident report output",
+    )
+
+    parser.add_argument(
+        "--html",
+        help="Optional HTML incident report output",
+    )
 
     args = parser.parse_args()
     log_path = Path(args.file)
@@ -51,9 +184,10 @@ def main():
     warning_pattern = re.compile(r"WARNING")
     critical_pattern = re.compile(r"CRITICAL")
     ip_pattern = re.compile(r"\b\d{1,3}(?:\.\d{1,3}){3}\b")
-    auth_fail_pattern = re.compile(r"(authentication\s+failure|authentication\s+failed|failed\s+login|auth\s+failure|failed\s+password|invalid\s+user)",
+    auth_fail_pattern = re.compile(
+        r"(authentication\s+failure|authentication\s+failed|failed\s+login|auth\s+failure|failed\s+password|invalid\s+user)",
         re.IGNORECASE
-    )
+        )
     timestamp_pattern = re.compile(r"([A-Z][a-z]{2}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2})")
 
     report = {
@@ -159,7 +293,7 @@ def main():
     for ip, times in auth_events.items():
         times.sort()
         for i in range(len(times)):
-            window = [t for t in times if 0 <=(t - times[i]).total_seconds() <= 60]
+            window = [t for t in times if 0 <= (t - times[i]).total_seconds() <= 60]
             if len(window) >= 5:
                 report["bruteforce_alerts"].append({
                     "ip": ip,
@@ -265,7 +399,7 @@ def main():
     if report["top_ips"]:
         print("\nTop IPs:")
 
-        for rank, ip_data in enumerate(report["top_ips"], start = 1):
+        for rank, ip_data in enumerate(report["top_ips"], start=1):
             print(
                 f"{BLUE}{rank}.{RESET} "
                 f"{ip_data['ip']} "
@@ -310,6 +444,16 @@ def main():
         print(f"ERROR: No permission to write to output file: {output_path}")
     except Exception as e:
         print(f"ERROR: Could not write report: {e}")
+
+    if args.html:
+        try:
+            generate_html_report(
+                report,
+                args.html
+            )
+        except Exception as e:
+            print(f"ERROR writing HTML report: {e}")
+
 
 if __name__ == "__main__":
     main()
