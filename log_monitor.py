@@ -19,11 +19,6 @@ def parse_timestamp(ts):
 
 def generate_html_report(report, output_file):
 
-    error_total = len(report['errors'])
-    warning_total = len(report['warnings'])
-    critical_total = len(report['criticals'])
-    auth_total = len(report['auth_failures'])
-
     html = f"""
     <!DOCTYPE html>
     <html>
@@ -139,6 +134,18 @@ def generate_html_report(report, output_file):
 
     print(f"HTML report saved to {output_file}")
 
+def classify_ip(ip):
+    if ip.startswith("192.168."):
+        return "Internal Network"
+
+    elif ip.startswith("10."):
+        return "Internal Network"
+
+    elif ip.startswith("172.16."):
+        return "Internal Network"
+
+    else:
+        return "External Source"
 
 def main():
     parser = argparse.ArgumentParser(description='Log monitor tool')
@@ -303,6 +310,31 @@ def main():
                 })
                 break
 
+    report["attack_analysis"] = []
+
+    for alert in report["bruteforce_alerts"]:
+
+        failures = alert["failures"]
+
+        if failures >= 20:
+            threat = "CRITICAL"
+
+        elif failures >= 10:
+            threat = "HIGH"
+
+        elif failures >= 5:
+            threat = "MEDIUM"
+
+        else:
+            threat = "LOW"
+
+        report["attack_analysis"].append({
+            "source_ip": alert["ip"],
+            "failed_attempts": failures,
+            "classification": classify_ip(alert["ip"]),
+            "threat": threat,
+        })
+
     error_count = len(report["errors"])
     warning_count = len(report["warnings"])
     critical_count = len(report["criticals"])
@@ -390,12 +422,15 @@ def main():
         )
     report["recommendations"] = recommendations
 
+
+
     print("\n" + BOLD + BLUE + "===== SUMMARY =====" + RESET)
     print(f"{RED}Errors:{RESET} {error_count}")
     print(f"{YELLOW}Warnings:{RESET} {warning_count}")
     print(f"{RED}Criticals:{RESET} {critical_count}")
     print(f"{RED}Auth Failures:{RESET} {len(report['auth_failures'])}")
     print(f"{BLUE}Unique IPs:{RESET} {len(report['ip_frequency'])}")
+
     if report["top_ips"]:
         print("\nTop IPs:")
 
@@ -407,6 +442,19 @@ def main():
             )
 
     print(f"{RED}Bruteforce Alerts:{RESET} {len(report['bruteforce_alerts'])}")
+
+    if report["attack_analysis"]:
+        print("\nAttack Sources:")
+
+        for attack in report["attack_analysis"]:
+
+            print(
+                f"- {attack['source_ip']} | "
+                f"{attack['classification']} | "
+                f"{attack['threat']} | "
+                f"{attack['failed_attempts']} attempts"
+            )
+
     print(f"{GREEN}Health Score:{RESET} {health_score}/100")
     print(f"{RED}Threat Score:{RESET} {risk_score}")
     print(f"{RED}Threat Level:{RESET} {risk_level}")
